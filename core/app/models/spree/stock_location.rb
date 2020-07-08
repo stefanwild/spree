@@ -106,8 +106,18 @@ module Spree
     private
 
     def create_stock_items
-      Variant.includes(:product).find_each do |variant|
-        propagate_variant(variant)
+      prepared_stock_items = Spree::Variant.ids.map do |variant_id|
+        Hash[
+          'stock_location_id', id,
+          'variant_id', variant_id,
+          'backorderable', backorderable_default,
+          'created_at', Time.current,
+          'updated_at', Time.current
+        ]
+      end
+      if prepared_stock_items.any?
+        stock_items.insert_all(prepared_stock_items)
+        Spree::Variant.touch_all
       end
     end
 
